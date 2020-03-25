@@ -1,60 +1,58 @@
 <?php
-/**
- * HTTP Client for NSQ
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:56 PM
- */
 
 namespace NSQClient\Connection\Transport;
 
 use NSQClient\SDK;
 
+/**
+ * Class HTTP
+ * @package NSQClient\Connection\Transport
+ */
 class HTTP
 {
     /**
      * @var string
      */
-    private static $agent = SDK::NAME.'-'.SDK::VERSION;
+    private static string $agent = SDK::NAME . '-' . SDK::VERSION;
 
     /**
-     * @var array
+     * @var string[]
      */
-    private static $headers = ['Accept: application/vnd.nsq; version=1.0'];
+    private static array $headers = ['Accept: application/vnd.nsq; version=1.0'];
 
     /**
      * @var string
      */
-    private static $encoding = '';
+    private static string $encoding = '';
 
     /**
-     * @param $url
-     * @param array $extOptions
-     * @return array
+     * @param string $url
+     * @param array<int, mixed> $extOptions
+     * @return array<int, mixed>
      */
-    public static function get($url, $extOptions = [])
+    public static function get(string $url, array $extOptions = []): array
     {
         return self::request($url, [], $extOptions);
     }
 
     /**
-     * @param $url
-     * @param $data
-     * @param array $extOptions
-     * @return array
+     * @param string $url
+     * @param string $data
+     * @param array<int, mixed> $extOptions
+     * @return array<int, mixed>
      */
-    public static function post($url, $data, $extOptions = [])
+    public static function post(string $url, string $data, array $extOptions = []): array
     {
         return self::request($url, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $data], $extOptions);
     }
 
     /**
-     * @param $url
-     * @param $selfOptions
-     * @param $usrOptions
-     * @return array
+     * @param string $url
+     * @param array<int, mixed> $selfOptions
+     * @param array<int, mixed> $usrOptions
+     * @return array<int, mixed>
      */
-    private static function request($url, $selfOptions, $usrOptions)
+    private static function request(string $url, array $selfOptions, array $usrOptions): array
     {
         $ch = curl_init();
 
@@ -69,8 +67,8 @@ class HTTP
             CURLOPT_FAILONERROR    => true
         ];
 
-        $selfOptions && $initOptions = self::mergeOptions($initOptions, $selfOptions);
-        $usrOptions && $initOptions = self::mergeOptions($initOptions, $usrOptions);
+        count($selfOptions) && $initOptions = self::mergeOptions($initOptions, $selfOptions);
+        count($usrOptions) && $initOptions = self::mergeOptions($initOptions, $usrOptions);
 
         curl_setopt_array($ch, $initOptions);
 
@@ -84,11 +82,11 @@ class HTTP
     }
 
     /**
-     * @param $base
-     * @param $custom
-     * @return mixed
+     * @param array<int, mixed> $base
+     * @param array<int, mixed> $custom
+     * @return array<int, mixed>
      */
-    private static function mergeOptions($base, $custom)
+    private static function mergeOptions(array $base, array $custom): array
     {
         foreach ($custom as $key => $val) {
             $base[$key] = $val;

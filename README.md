@@ -1,11 +1,11 @@
-# NSQClient
+# NSQClient (PHP 7.4 version)
 
 Yet another PHP client for [NSQ](http://nsq.io)
 
 ### Installation (via composer)
 
 ```
-composer require moolex/nsqclient dev-master
+composer require vorta/nsqclient dev-master
 ```
 
 ### Usage
@@ -24,7 +24,8 @@ $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
 ```php
 $topic = 'my_topic';
 $endpoint = new \NSQClient\Access\Endpoint('http://127.0.0.1:4161');
-$message = (new \NSQClient\Message\Message('hello world'))->deferred(5);
+$message = new \NSQClient\Message\Message('hello world');
+$message->deferred(5);
 $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
 ```
 

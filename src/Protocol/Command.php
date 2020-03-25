@@ -1,43 +1,42 @@
 <?php
-/**
- * NSQ Commands
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:40 PM
- */
 
 namespace NSQClient\Protocol;
 
+/**
+ * Class Command
+ * @package NSQClient\Protocol
+ */
 class Command
 {
     /**
      * Magic header
      */
-    const MAGIC_V2 = '  V2';
+    private const MAGIC_V2 = '  V2';
 
     /**
      * Magic hello
      * @return string
      */
-    public static function magic()
+    public static function magic(): string
     {
         return self::MAGIC_V2;
     }
 
     /**
      * Identify self [IDENTIFY]
-     * @param $client_id
-     * @param $hostname
-     * @param $user_agent
+     * @param string $clientId
+     * @param string $hostname
+     * @param string $userAgent
      * @return string
      */
-    public static function identify($client_id, $hostname, $user_agent)
+    public static function identify(string $clientId, string $hostname, string $userAgent): string
     {
         $cmd = self::command('IDENTIFY');
+        /** @var string $data */
         $data = json_encode([
-            'client_id' => (string)$client_id,
-            'hostname' => (string)$hostname,
-            'user_agent' => (string)$user_agent
+            'client_id'     => $clientId,
+            'hostname'      => $hostname,
+            'user_agent'    => $userAgent
         ]);
         $size = pack('N', strlen($data));
         return $cmd . $size . $data;
@@ -49,7 +48,7 @@ class Command
      * @param string $channel
      * @return string
      */
-    public static function subscribe($topic, $channel)
+    public static function subscribe(string $topic, string $channel): string
     {
         return self::command('SUB', $topic, $channel);
     }
@@ -61,7 +60,7 @@ class Command
      * @param int $deferred
      * @return string
      */
-    public static function message($topic, $message, $deferred = null)
+    public static function message(string $topic, string $message, ?int $deferred = null): string
     {
         $cmd = is_null($deferred)
             ? self::command('PUB', $topic)
@@ -73,11 +72,11 @@ class Command
 
     /**
      * Publish -multi [MPUB]
-     * @param $topic
-     * @param $messages
+     * @param string $topic
+     * @param string[] $messages
      * @return string
      */
-    public static function messages($topic, $messages)
+    public static function messages(string $topic, array $messages): string
     {
         $cmd = self::command('MPUB', $topic);
         $msgNum = pack('N', count($messages));
@@ -93,10 +92,10 @@ class Command
 
     /**
      * Ready [RDY]
-     * @param integer $count
+     * @param int $count
      * @return string
      */
-    public static function ready($count)
+    public static function ready(int $count): string
     {
         return self::command('RDY', $count);
     }
@@ -106,7 +105,7 @@ class Command
      * @param string $id
      * @return string
      */
-    public static function finish($id)
+    public static function finish($id): string
     {
         return self::command('FIN', $id);
     }
@@ -114,10 +113,10 @@ class Command
     /**
      * Requeue [REQ]
      * @param string $id
-     * @param integer $millisecond
+     * @param int $millisecond
      * @return string
      */
-    public static function requeue($id, $millisecond)
+    public static function requeue(string $id, int $millisecond): string
     {
         return self::command('REQ', $id, $millisecond);
     }
@@ -126,7 +125,7 @@ class Command
      * No-op [NOP]
      * @return string
      */
-    public static function nop()
+    public static function nop(): string
     {
         return self::command('NOP');
     }
@@ -135,7 +134,7 @@ class Command
      * Cleanly close [CLS]
      * @return string
      */
-    public static function close()
+    public static function close(): string
     {
         return self::command('CLS');
     }
@@ -144,7 +143,7 @@ class Command
      * Gen command
      * @return string
      */
-    private static function command()
+    private static function command(): string
     {
         $args = func_get_args();
         $cmd = array_shift($args);

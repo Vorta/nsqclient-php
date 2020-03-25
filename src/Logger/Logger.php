@@ -1,23 +1,22 @@
 <?php
-/**
- * Logger gate
- * User: moyo
- * Date: 10/04/2017
- * Time: 12:11 PM
- */
 
 namespace NSQClient\Logger;
 
 use NSQClient\SDK;
-use Psr\Log\AbstractLogger;
 use Psr\Log\NullLogger;
+use Psr\Log\AbstractLogger;
+use Psr\Log\InvalidArgumentException;
 
+/**
+ * Class Logger
+ * @package NSQClient\Logger
+ */
 class Logger extends AbstractLogger
 {
     /**
-     * @var self
+     * @var self|null
      */
-    private static $instance = null;
+    private static ?self $instance = null;
 
     /**
      * @var NullLogger
@@ -25,30 +24,34 @@ class Logger extends AbstractLogger
     private $nullLogger = null;
 
     /**
+     * Logger constructor.
+     */
+    private function __construct()
+    {
+        $this->nullLogger = new NullLogger();
+    }
+
+    /**
      * @return self
      */
-    public static function ins()
+    public static function getInstance(): self
     {
         if (is_null(self::$instance)) {
-            self::$instance = new self;
+            self::$instance = new self();
         }
         return self::$instance;
     }
 
     /**
-     * Logger constructor.
-     */
-    public function __construct()
-    {
-        $this->nullLogger = new NullLogger;
-    }
-
-    /**
-     * @param mixed $level
+     * @param mixed  $level
      * @param string $message
-     * @param array $context
+     * @param array<mixed>  $context
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException
      */
-    public function log($level, $message, array $context = array())
+    public function log($level, $message, array $context = []): void
     {
         if (SDK::$presentLogger) {
             SDK::$presentLogger->log($level, $message, $context);

@@ -1,13 +1,8 @@
 <?php
-/**
- * Connection node for nsqd
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:37 PM
- */
 
 namespace NSQClient\Connection;
 
+use Exception;
 use NSQClient\Access\Endpoint;
 use NSQClient\Connection\Transport\HTTP;
 use NSQClient\Connection\Transport\TCP;
@@ -24,47 +19,51 @@ use NSQClient\Protocol\CommandHTTP;
 use NSQClient\Protocol\Specification;
 use NSQClient\SDK;
 
+/**
+ * Class Nsqd
+ * @package NSQClient\Connection
+ */
 class Nsqd
 {
     /**
-     * @var Endpoint
+     * @var Endpoint|null
      */
-    private $endpoint = null;
+    private ?Endpoint $endpoint = null;
 
     /**
      * @var string
      */
-    private $host = '127.0.0.1';
+    private string $host = '127.0.0.1';
 
     /**
      * @var int
      */
-    private $portTCP = 4150;
+    private int $portTCP = 4150;
 
     /**
-     * @var TCP
+     * @var TCP|null
      */
-    private $connTCP = null;
+    private ?TCP $connTCP = null;
 
     /**
      * @var int
      */
-    private $portHTTP = 4151;
+    private int $portHTTP = 4151;
 
     /**
      * @var string
      */
-    private $topic = 'topic';
+    private string $topic = 'topic';
 
     /**
      * PUB: Idle seconds before recycling
      * SUB: Run seconds before exiting
      * @var int
      */
-    private $lifecycle = 0;
+    private int $lifecycle = 0;
 
     /**
-     * @var callable
+     * @var callable|null
      */
     private $subProcessor = null;
 
@@ -76,17 +75,17 @@ class Nsqd
     {
         $this->endpoint = $endpoint;
 
-        if ($this->endpoint->getConnType() == 'tcp') {
-            $this->connTCP = new TCP;
+        if ($this->endpoint->getConnType() === 'tcp') {
+            $this->connTCP = new TCP();
             $this->connTCP->setHandshake([$this, 'handshake']);
         }
     }
 
     /**
-     * @param $route
+     * @param array<string, mixed> $route
      * @return self
      */
-    public function setRoute($route)
+    public function setRoute(array $route): self
     {
         $this->host = $route['host'];
         $this->portTCP = $route['ports']['tcp'];
@@ -100,31 +99,29 @@ class Nsqd
     }
 
     /**
-     * @param $topic
+     * @param string $topic
      * @return self
      */
-    public function setTopic($topic)
+    public function setTopic(string $topic): self
     {
         $this->topic = $topic;
-
         return $this;
     }
 
     /**
-     * @param $seconds
+     * @param int $seconds
      * @return self
      */
-    public function setLifecycle($seconds)
+    public function setLifecycle(int $seconds): self
     {
         $this->lifecycle = $seconds;
-
         return $this;
     }
 
     /**
      * @return self
      */
-    public function setProducer()
+    public function setProducer(): self
     {
         if ($this->connTCP) {
             $this->connTCP->setRecycling($this->lifecycle);
@@ -137,7 +134,7 @@ class Nsqd
      * @param callable $processor
      * @return self
      */
-    public function setConsumer(callable $processor)
+    public function setConsumer(callable $processor): self
     {
         $this->subProcessor = $processor;
 
@@ -154,15 +151,15 @@ class Nsqd
     /**
      * @return int
      */
-    public function getSockID()
+    public function getSockID(): int
     {
-        return (int)$this->connTCP->socket();
+        return (int) $this->connTCP->socket();
     }
 
     /**
      * @return Stream
      */
-    public function getSockIns()
+    public function getSockIns(): Stream
     {
         return $this->connTCP;
     }
@@ -170,70 +167,76 @@ class Nsqd
     /**
      * @return bool
      */
-    public function isConsumer()
+    public function isConsumer(): bool
     {
-        return ! is_null($this->subProcessor);
+        return !is_null($this->subProcessor);
     }
 
     /**
      * @param Stream $stream
      */
-    public function handshake(Stream $stream)
+    public function handshake(Stream $stream): void
     {
         $stream->write(Command::magic());
     }
 
     /**
-     * @param $message
+     * @param Message $message
      * @return bool
      */
-    public function publish($message)
+    public function publish(Message $message): bool
     {
         return
-            $this->endpoint->getConnType() == 'tcp'
+            $this->endpoint->getConnType() === 'tcp'
                 ? $this->publishViaTCP($message)
                 : $this->publishViaHTTP($message)
         ;
     }
 
     /**
-     * @param $channel
+     * @param string $channel
+     * @throws Exception
      */
-    public function subscribe($channel)
+    public function subscribe(string $channel): void
     {
         $this->connTCP->setBlocking(false);
 
         $evLoop = Pool::getEvLoop();
 
-        $evLoop->addReadStream($this->connTCP->socket(), function ($socket) {
-            $this->dispatching(Specification::readFrame(Pool::search($socket)));
-        });
+        $evLoop->addReadStream(
+            $this->connTCP->socket(),
+            fn ($socket) => $this->dispatching(Specification::readFrame(Pool::search($socket)))
+        );
 
-        $this->connTCP->write(Command::identify(getmypid(), gethostname(), sprintf('%s/%s', SDK::NAME, SDK::VERSION)));
+        $this->connTCP->write(Command::identify(
+            (string) getmypid(),
+            (string) gethostname(),
+            sprintf('%s/%s', SDK::NAME, SDK::VERSION)
+        ));
         $this->connTCP->write(Command::subscribe($this->topic, $channel));
         $this->connTCP->write(Command::ready(1));
 
         Pool::setEvAttached();
 
-        Logger::ins()->debug('Consumer is ready', $this->loggingMeta());
+        Logger::getInstance()->debug('Consumer is ready', $this->loggingMeta());
     }
 
     /**
-     * @param $messageID
+     * @param string $messageID
      */
-    public function finish($messageID)
+    public function finish(string $messageID): void
     {
-        Logger::ins()->debug('Make message is finished', $this->loggingMeta(['id' => $messageID]));
+        Logger::getInstance()->debug('Make message is finished', $this->loggingMeta(['id' => $messageID]));
         $this->connTCP->write(Command::finish($messageID));
     }
 
     /**
-     * @param $messageID
-     * @param $millisecond
+     * @param string $messageID
+     * @param int $millisecond
      */
-    public function requeue($messageID, $millisecond)
+    public function requeue(string $messageID, int $millisecond): void
     {
-        Logger::ins()->debug(
+        Logger::getInstance()->debug(
             'Make message is requeued',
             $this->loggingMeta(['id' => $messageID, 'delay' => $millisecond])
         );
@@ -243,63 +246,72 @@ class Nsqd
     /**
      * subscribe closing
      */
-    public function closing()
+    public function closing(): void
     {
-        Logger::ins()->info('Consumer is closing', $this->loggingMeta());
+        Logger::getInstance()->info('Consumer is closing', $this->loggingMeta());
         $this->connTCP->write(Command::close());
     }
 
     /**
      * process exiting
      */
-    private function exiting()
+    private function exiting(): void
     {
-        Logger::ins()->info('Consumer is exiting', $this->loggingMeta());
+        Logger::getInstance()->info('Consumer is exiting', $this->loggingMeta());
         $this->connTCP->close();
         Pool::setEvDetached();
     }
 
     /**
-     * @param $message
+     * @param Message|MessageBag $message
      * @return bool
      */
-    private function publishViaHTTP($message)
+    private function publishViaHTTP($message): bool
     {
         if ($message instanceof Message) {
             list($uri, $data) = CommandHTTP::message($this->topic, $message->data());
         } elseif ($message instanceof MessageBag) {
             list($uri, $data) = CommandHTTP::messages($this->topic, $message->export());
         } else {
-            Logger::ins()->error('Un-expected pub message', $this->loggingMeta(['input' => json_encode($message)]));
+            Logger::getInstance()->error(
+                'Un-expected pub message',
+                $this->loggingMeta(['input' => json_encode($message)])
+            );
             throw new InvalidMessageException('Unknowns message object');
         }
 
-        list($error, $result) = HTTP::post(sprintf('http://%s:%d/%s', $this->host, $this->portHTTP, $uri), $data);
+        list($error, $result) = HTTP::post(
+            sprintf('http://%s:%d/%s', $this->host, $this->portHTTP, $uri),
+            $data
+        );
 
         if ($error) {
             list($netErrNo, $netErrMsg) = $error;
-            Logger::ins()->error(
+            Logger::getInstance()->error(
                 'HTTP Publish is failed',
                 $this->loggingMeta(['no' => $netErrNo, 'msg' => $netErrMsg])
             );
             throw new NetworkSocketException($netErrMsg, $netErrNo);
         } else {
-            return $result === 'OK' ? true : false;
+            return $result === 'OK';
         }
     }
 
     /**
-     * @param $message
+     * @param Message|MessageBag $message
      * @return bool
      */
-    private function publishViaTCP($message)
+    private function publishViaTCP($message): bool
     {
         if ($message instanceof Message) {
             $buffer = Command::message($this->topic, $message->data(), $message->deferred());
         } elseif ($message instanceof MessageBag) {
             $buffer = Command::messages($this->topic, $message->export());
         } else {
-            Logger::ins()->error('Un-expected pub message', $this->loggingMeta(['input' => json_encode($message)]));
+            Logger::getInstance()->error(
+                'Un-expected pub message',
+                $this->loggingMeta(['input' => json_encode($message)])
+            );
             throw new InvalidMessageException('Unknowns message object');
         }
 
@@ -313,17 +325,16 @@ class Nsqd
     }
 
     /**
-     * @param $frame
+     * @param array<string, mixed> $frame
      * @return bool|null
      */
-    private function dispatching($frame)
+    private function dispatching(array $frame): ?bool
     {
         switch (true) {
             case Specification::frameIsOK($frame):
                 return true;
-                break;
             case Specification::frameIsMessage($frame):
-                Logger::ins()->debug(
+                Logger::getInstance()->debug(
                     'FRAME got is message',
                     $this->loggingMeta(['id' => $frame['id'], 'data' => $frame['payload']])
                 );
@@ -337,41 +348,36 @@ class Nsqd
                     )
                 );
                 return null;
-                break;
             case Specification::frameIsHeartbeat($frame):
-                Logger::ins()->debug('FRAME got is heartbeat', $this->loggingMeta());
+                Logger::getInstance()->debug('FRAME got is heartbeat', $this->loggingMeta());
                 $this->connTCP->write(Command::nop());
                 return null;
-                break;
             case Specification::frameIsError($frame):
-                Logger::ins()->error('FRAME got is error', $this->loggingMeta(['error' => $frame['error']]));
+                Logger::getInstance()->error('FRAME got is error', $this->loggingMeta(['error' => $frame['error']]));
                 throw new GenericErrorException($frame['error']);
-                break;
             case Specification::frameIsBroken($frame):
-                Logger::ins()->warning('FRAME got is broken', $this->loggingMeta(['error' => $frame['error']]));
+                Logger::getInstance()->warning('FRAME got is broken', $this->loggingMeta(['error' => $frame['error']]));
                 throw new GenericErrorException($frame['error']);
-                break;
             case Specification::frameIsCloseWait($frame):
-                Logger::ins()->debug('FRAME got is close-wait', $this->loggingMeta());
+                Logger::getInstance()->debug('FRAME got is close-wait', $this->loggingMeta());
                 $this->exiting();
                 return null;
-                break;
             default:
-                Logger::ins()->warning('FRAME got is unknowns', $this->loggingMeta());
-                throw new UnknownProtocolException('Unknowns protocol data ('.json_encode($frame).')');
+                Logger::getInstance()->warning('FRAME got is unknowns', $this->loggingMeta());
+                throw new UnknownProtocolException('Unknowns protocol data (' . json_encode($frame) . ')');
         }
     }
 
     /**
      * @param Message $message
      */
-    private function processingMessage(Message $message)
+    private function processingMessage(Message $message): void
     {
         try {
             call_user_func_array($this->subProcessor, [$message]);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             // TODO add observer for usr callback
-            Logger::ins()->critical('Consuming processor has exception', $this->loggingMeta([
+            Logger::getInstance()->critical('Consuming processor has exception', $this->loggingMeta([
                 'cls' => get_class($exception),
                 'msg' => $exception->getMessage()
             ]));
@@ -379,10 +385,10 @@ class Nsqd
     }
 
     /**
-     * @param $extra
-     * @return array
+     * @param array<string, mixed> $extra
+     * @return array<string, mixed>
      */
-    private function loggingMeta($extra = [])
+    private function loggingMeta(array $extra = []): array
     {
         return array_merge([
             'topic' => $this->topic,

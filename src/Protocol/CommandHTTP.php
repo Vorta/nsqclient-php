@@ -1,22 +1,20 @@
 <?php
-/**
- * NSQ Commands / HTTP
- * User: moyo
- * Date: 01/04/2017
- * Time: 5:18 PM
- */
 
 namespace NSQClient\Protocol;
 
+/**
+ * Class CommandHTTP
+ * @package NSQClient\Protocol
+ */
 class CommandHTTP
 {
     /**
      * Publish [PUB]
      * @param string $topic
      * @param string $message
-     * @return array
+     * @return array<int, mixed>
      */
-    public static function message($topic, $message)
+    public static function message(string $topic, string $message): array
     {
         return [
             sprintf('pub?topic=%s', $topic),
@@ -26,11 +24,11 @@ class CommandHTTP
 
     /**
      * Publish -multi [MPUB]
-     * @param $topic
-     * @param $messages
-     * @return array
+     * @param string $topic
+     * @param string[] $messages
+     * @return array<int, mixed>
      */
-    public static function messages($topic, $messages)
+    public static function messages(string $topic, array $messages)
     {
         $buffer = '';
         foreach ($messages as $message) {

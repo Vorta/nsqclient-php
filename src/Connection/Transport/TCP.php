@@ -1,10 +1,4 @@
 <?php
-/**
- * TCP Client for NSQ
- * User: moyo
- * Date: 31/03/2017
- * Time: 6:03 PM
- */
 
 namespace NSQClient\Connection\Transport;
 
@@ -12,77 +6,81 @@ use NSQClient\Contract\Network\Stream;
 use NSQClient\Exception\NetworkSocketException;
 use NSQClient\Exception\NetworkTimeoutException;
 
+/**
+ * Class TCP
+ * @package NSQClient\Connection\Transport
+ */
 class TCP implements Stream
 {
     /**
      * @var string
      */
-    private $host = '127.0.0.1';
+    private string $host = '127.0.0.1';
 
     /**
      * @var int
      */
-    private $port = 4150;
+    private int $port = 4150;
 
     /**
      * @var bool
      */
-    private $blocking = true;
+    private bool $blocking = true;
 
     /**
-     * @var resource
+     * @var resource|null
      */
     private $socket = null;
 
     /**
-     * @var callable
+     * @var callable|null
      */
     private $handshake = null;
 
     /**
      * @var int
      */
-    private $readTimeoutSec = 5;
+    private int $readTimeoutSec = 5;
 
     /**
      * @var int
      */
-    private $readTimeoutUsec = 0;
+    private int $readTimeoutUsec = 0;
 
     /**
      * @var int
      */
-    private $writeTimeoutSec = 5;
+    private int $writeTimeoutSec = 5;
 
     /**
      * @var int
      */
-    private $writeTimeoutUsec = 0;
+    private int $writeTimeoutUsec = 0;
 
     /**
      * @var int
      */
-    private $connRecyclingSec = 0;
+    private int $connRecyclingSec = 0;
 
     /**
      * @var int
      */
-    private $connEstablishedTime = 0;
+    private int $connEstablishedTime = 0;
 
     /**
-     * @param $host
-     * @param $port
+     * @param string $host
+     * @param int $port
      */
-    public function setTarget($host, $port)
+    public function setTarget(string $host, int $port): void
     {
         $this->host = $host;
         $this->port = $port;
     }
 
     /**
-     * @param $switch
+     * @param bool $switch
      */
-    public function setBlocking($switch)
+    public function setBlocking(bool $switch): void
     {
         $this->blocking = $switch ? true : false;
     }
@@ -91,23 +89,23 @@ class TCP implements Stream
      * @param string $ch
      * @param float $time
      */
-    public function setTimeout($ch = 'rw', $time = 5.0)
+    public function setTimeout(string $ch = 'rw', float $time = 5.0): void
     {
         if ($ch === 'r' || $ch === 'rw') {
-            $this->readTimeoutSec = floor($time);
-            $this->readTimeoutUsec = ($time - $this->readTimeoutSec) * 1000000;
+            $this->readTimeoutSec = (int) floor($time);
+            $this->readTimeoutUsec = (int) ($time - $this->readTimeoutSec) * 1000000;
         }
 
         if ($ch === 'w' || $ch === 'rw') {
-            $this->writeTimeoutSec = floor($time);
-            $this->writeTimeoutUsec = ($time - $this->writeTimeoutSec) * 1000000;
+            $this->writeTimeoutSec = (int) floor($time);
+            $this->writeTimeoutUsec = (int) ($time - $this->writeTimeoutSec) * 1000000;
         }
     }
 
     /**
-     * @param $seconds
+     * @param int $seconds
      */
-    public function setRecycling($seconds)
+    public function setRecycling(int $seconds): void
     {
         $this->connRecyclingSec = $seconds;
     }
@@ -115,7 +113,7 @@ class TCP implements Stream
     /**
      * @param callable $processor
      */
-    public function setHandshake(callable $processor)
+    public function setHandshake(callable $processor): void
     {
         $this->handshake = $processor;
     }
@@ -125,8 +123,9 @@ class TCP implements Stream
      */
     public function socket()
     {
-        if ($this->socket) {
-            if ($this->connRecyclingSec
+        if (!is_null($this->socket)) {
+            if (
+                $this->connRecyclingSec
                 && $this->connEstablishedTime
                 && (time() - $this->connEstablishedTime > $this->connRecyclingSec)
             ) {
@@ -138,18 +137,19 @@ class TCP implements Stream
 
         $netErrNo = $netErrMsg = null;
 
-        $this->socket = fsockopen($this->host, $this->port, $netErrNo, $netErrMsg);
+        $socket = fsockopen($this->host, $this->port, $netErrNo, $netErrMsg);
 
-        if ($this->socket === false) {
+        if ($socket === false) {
             throw new NetworkSocketException(
                 "Connecting failed [{$this->host}:{$this->port}] - {$netErrMsg}",
                 $netErrNo
             );
         } else {
+            $this->socket = $socket;
             $this->connEstablishedTime = time();
         }
 
-        stream_set_blocking($this->socket, $this->blocking ? 1 : 0);
+        stream_set_blocking($this->socket, $this->blocking);
 
         if (is_callable($this->handshake)) {
             call_user_func($this->handshake, $this);
@@ -159,11 +159,11 @@ class TCP implements Stream
     }
 
     /**
-     * @param $buf
+     * @param string $buf
      */
-    public function write($buf)
+    public function write(string $buf): void
     {
-        $null = null;
+        $null = [];
         $socket = $this->socket();
         $writeCh = [$socket];
 
@@ -171,7 +171,7 @@ class TCP implements Stream
             $writable = stream_select($null, $writeCh, $null, $this->writeTimeoutSec, $this->writeTimeoutUsec);
             if ($writable > 0) {
                 $wroteLen = stream_socket_sendto($socket, $buf);
-                if ($wroteLen === -1 || $wroteLen === false) {
+                if ($wroteLen === -1) {
                     throw new NetworkSocketException("Writing failed [{$this->host}:{$this->port}](1)");
                 }
                 $buf = substr($buf, $wroteLen);
@@ -184,10 +184,10 @@ class TCP implements Stream
     }
 
     /**
-     * @param $len
+     * @param int $len
      * @return string
      */
-    public function read($len)
+    public function read(int $len): string
     {
         $null = null;
         $socket = $this->socket();
@@ -200,9 +200,7 @@ class TCP implements Stream
             $readable = stream_select($readCh, $null, $null, $this->readTimeoutSec, $this->readTimeoutUsec);
             if ($readable > 0) {
                 $recv = stream_socket_recvfrom($socket, $remainingLen);
-                if ($recv === false) {
-                    throw new NetworkSocketException("Reading failed [{$this->host}:{$this->port}](1)");
-                } elseif ($recv === '') {
+                if ($recv === '') {
                     throw new NetworkSocketException("Reading failed [{$this->host}:{$this->port}](2)");
                 } else {
                     $buffer .= $recv;
@@ -221,7 +219,7 @@ class TCP implements Stream
     /**
      * @return bool
      */
-    public function close()
+    public function close(): bool
     {
         $closed = fclose($this->socket);
         $this->socket = null;

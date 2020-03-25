@@ -1,10 +1,4 @@
 <?php
-/**
- * Graceful shutdown tools
- * User: moyo
- * Date: 06/05/2017
- * Time: 11:44 PM
- */
 
 namespace NSQClient\Utils;
 
@@ -12,18 +6,22 @@ use NSQClient\Connection\Pool;
 use NSQClient\Logger\Logger;
 use React\EventLoop\LoopInterface;
 
+/**
+ * Class GracefulShutdown
+ * @package NSQClient\Utils
+ */
 class GracefulShutdown
 {
     /**
      * 500 ms
      * @var float
      */
-    private static $signalDispatchInv = 0.5;
+    private static float $signalDispatchInv = 0.5;
 
     /**
-     * @var array
+     * @var array<int, string>
      */
-    private static $acceptSignals = [
+    private static array $acceptSignals = [
         SIGHUP => 'SIGHUP',
         SIGINT => 'SIGINT',
         SIGTERM => 'SIGTERM'
@@ -32,7 +30,7 @@ class GracefulShutdown
     /**
      * @param LoopInterface $evLoop
      */
-    public static function init(LoopInterface $evLoop)
+    public static function init(LoopInterface $evLoop): void
     {
         if (extension_loaded('pcntl')) {
             foreach (self::$acceptSignals as $signal => $name) {
@@ -46,15 +44,17 @@ class GracefulShutdown
     }
 
     /**
-     * @param $signal
+     * @param int $signal
      */
-    public static function signalHandler($signal)
+    public static function signalHandler(int $signal): void
     {
-        Logger::ins()->info('Signal ['.self::$acceptSignals[$signal].'] received .. prepare shutdown');
+        Logger::getInstance()->info('Signal [' . self::$acceptSignals[$signal] . '] received ... prepare shutdown');
 
         $instances = Pool::instances();
         foreach ($instances as $nsqdIns) {
-            $nsqdIns->isConsumer() && $nsqdIns->closing();
+            if ($nsqdIns->isConsumer()) {
+                $nsqdIns->closing();
+            }
         }
     }
 }

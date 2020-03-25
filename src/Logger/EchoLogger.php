@@ -1,22 +1,21 @@
 <?php
-/**
- * Logger via echo
- * User: moyo
- * Date: 10/04/2017
- * Time: 12:07 PM
- */
 
 namespace NSQClient\Logger;
 
-use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
+use Psr\Log\AbstractLogger;
+use Psr\Log\InvalidArgumentException;
 
+/**
+ * Class EchoLogger
+ * @package NSQClient\Logger
+ */
 class EchoLogger extends AbstractLogger
 {
     /**
-     * @var array
+     * @var string[]
      */
-    private $levels = [
+    private array $levels = [
         LogLevel::EMERGENCY,
         LogLevel::ALERT,
         LogLevel::CRITICAL,
@@ -28,9 +27,9 @@ class EchoLogger extends AbstractLogger
     ];
 
     /**
-     * @var array
+     * @var array<string, string>
      */
-    private $colors = [
+    private array $colors = [
         LogLevel::EMERGENCY => '0;31m', // red
         LogLevel::ALERT => '0;31m', // red
         LogLevel::CRITICAL => '0;31m', // red
@@ -44,43 +43,51 @@ class EchoLogger extends AbstractLogger
     /**
      * @var string
      */
-    private $colorCtxKey = '0;37m'; // light gray
+    private string $colorCtxKey = '0;37m'; // light gray
 
     /**
      * @var string
      */
-    private $colorMsg = '1;37m'; // white
+    private string $colorMsg = '1;37m'; // white
 
     /**
      * @var string
      */
-    private $colorNO = "\033[0m";
+    private string $colorNO = "\033[0m";
 
     /**
      * @var string
      */
-    private $colorBGN = "\033[";
+    private string $colorBGN = "\033[";
 
     /**
-     * @var array
+     * @var string[]
      */
-    private $allows = [];
+    private array $allows = [];
 
     /**
      * EchoLogger constructor.
      * @param string $minimalLevel
      */
-    public function __construct($minimalLevel = LogLevel::NOTICE)
+    public function __construct(string $minimalLevel = LogLevel::NOTICE)
     {
-        $this->allows = array_slice($this->levels, 0, array_search($minimalLevel, $this->levels, true) + 1);
+        $this->allows = array_slice(
+            $this->levels,
+            0,
+            array_search($minimalLevel, $this->levels, true) + 1
+        );
     }
 
     /**
-     * @param mixed $level
+     * @param mixed  $level
      * @param string $message
-     * @param array $context
+     * @param array<mixed>  $context
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException
      */
-    public function log($level, $message, array $context = array())
+    public function log($level, $message, array $context = []): void
     {
         if (in_array($level, $this->allows)) {
             printf(
@@ -96,28 +103,28 @@ class EchoLogger extends AbstractLogger
     }
 
     /**
-     * @param $level
+     * @param string $level
      * @return string
      */
-    private function printableLevel($level)
+    private function printableLevel(string $level): string
     {
         return $this->colorBGN . $this->colors[$level] . strtoupper($level) . $this->colorNO;
     }
 
     /**
-     * @param $message
+     * @param string $message
      * @return string
      */
-    private function printableMessage($message)
+    private function printableMessage(string $message): string
     {
         return $this->colorBGN . $this->colorMsg . $message . $this->colorNO;
     }
 
     /**
-     * @param $context
+     * @param array<string, mixed> $context
      * @return string
      */
-    private function printableContext($context)
+    private function printableContext(array $context): string
     {
         $print = '[';
 

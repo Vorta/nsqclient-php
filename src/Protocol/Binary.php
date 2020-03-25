@@ -1,51 +1,51 @@
 <?php
-/**
- * Binary code/decode
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:43 PM
- */
 
 namespace NSQClient\Protocol;
 
 use NSQClient\Contract\Network\Stream;
 use NSQClient\SDK;
 
+/**
+ * Class Binary
+ * @package NSQClient\Protocol
+ */
 class Binary
 {
     /**
      * Read and unpack short (2 bytes) from buffer
      * @param Stream $buffer
-     * @return int
+     * @return int|null
      */
-    public static function readShort(Stream $buffer)
+    public static function readShort(Stream $buffer): ?int
     {
-        $unpack = @unpack('n', $buffer->read(2));
+        /** @var array<mixed>|false $unpack */
+        $unpack = unpack('n', $buffer->read(2));
         if (is_array($unpack)) {
             list(, $res) = $unpack;
             return $res;
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**
      * Read and unpack integer (4 bytes) from buffer
      * @param Stream $buffer
-     * @return int
+     * @return int|null
      */
-    public static function readInt(Stream $buffer)
+    public static function readInt(Stream $buffer): ?int
     {
-        $unpack = @unpack('N', $buffer->read(4));
+        /** @var array<mixed>|false $unpack */
+        $unpack = unpack('N', $buffer->read(4));
         if (is_array($unpack)) {
             list(, $res) = $unpack;
             if (PHP_INT_SIZE !== 4) {
                 $res = sprintf('%u', $res);
             }
-            return (int)$res;
-        } else {
-            return null;
+            return (int) $res;
         }
+
+        return null;
     }
 
     /**
@@ -53,17 +53,20 @@ class Binary
      * @param Stream $buffer
      * @return string
      */
-    public static function readLong(Stream $buffer)
+    public static function readLong(Stream $buffer): ?string
     {
-        $hi = @unpack('N', $buffer->read(4));
-        $lo = @unpack('N', $buffer->read(4));
+        /** @var array<mixed>|false $hi */
+        $hi = unpack('N', $buffer->read(4));
+        /** @var array<mixed>|false $lo */
+        $lo = unpack('N', $buffer->read(4));
+
         if (is_array($hi) && is_array($lo)) {
             $hi = sprintf('%u', $hi[1]);
             $lo = sprintf('%u', $lo[1]);
             return bcadd(bcmul($hi, '4294967296'), $lo);
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**
@@ -72,13 +75,14 @@ class Binary
      * @param int $size
      * @return string
      */
-    public static function readString(Stream $buffer, $size)
+    public static function readString(Stream $buffer, int $size): ?string
     {
         if (!SDK::$enabledStringPack) {
             return $buffer->read($size);
         }
 
-        $temp = @unpack('c'.$size.'chars', $buffer->read($size));
+        /** @var array<mixed>|false $temp */
+        $temp = @unpack('c' . $size . 'chars', $buffer->read($size));
         if (is_array($temp)) {
             $out = '';
             foreach ($temp as $v) {
@@ -87,17 +91,17 @@ class Binary
                 }
             }
             return $out;
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**
      * Pack string
-     * @param $data
+     * @param string $data
      * @return string
      */
-    public static function packString($data)
+    public static function packString(string $data): string
     {
         if (!SDK::$enabledStringPack) {
             return $data;

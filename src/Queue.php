@@ -1,38 +1,38 @@
 <?php
-/**
- * Queue API
- * User: moyo
- * Date: 31/03/2017
- * Time: 3:59 PM
- */
 
 namespace NSQClient;
 
+use Exception;
 use NSQClient\Access\Endpoint;
 use NSQClient\Connection\Lookupd;
 use NSQClient\Connection\Nsqd;
 use NSQClient\Connection\Pool;
 use NSQClient\Logger\Logger;
+use NSQClient\Message\Message;
 
+/**
+ * Class Queue
+ * @package NSQClient
+ */
 class Queue
 {
     /**
      * @param Endpoint $endpoint
-     * @param $topic
-     * @param $message
+     * @param string $topic
+     * @param Message $message
      * @return bool
      */
-    public static function publish(Endpoint $endpoint, $topic, $message)
-    {
+    public static function publish(
+        Endpoint $endpoint,
+        string $topic,
+        Message $message
+    ): bool {
         $routes = Lookupd::getNodes($endpoint, $topic);
-
         $route = $routes[rand(0, count($routes) - 1)];
-
         $keys = [$route['host'], $route['ports']['tcp']];
 
-        return
-        Pool::register($keys, function () use ($endpoint, $route) {
-            Logger::ins()->info('Creating new nsqd for producer', [
+        return Pool::register($keys, function () use ($endpoint, $route) {
+            Logger::getInstance()->info('Creating new nsqd for producer', [
                 'lookupd' => $endpoint->getLookupd(),
                 'route' => $route
             ]);
@@ -41,9 +41,8 @@ class Queue
                 ->setLifecycle(SDK::$pubRecyclingSec)
                 ->setProducer();
         })
-            ->setTopic($topic)
-            ->publish($message)
-        ;
+        ->setTopic($topic)
+        ->publish($message);
     }
 
     /**
@@ -52,30 +51,34 @@ class Queue
      * @param string $channel
      * @param callable $processor
      * @param int $lifecycle
+     * @throws Exception
      */
-    public static function subscribe(Endpoint $endpoint, $topic, $channel, callable $processor, $lifecycle = 0)
-    {
+    public static function subscribe(
+        Endpoint $endpoint,
+        string $topic,
+        string $channel,
+        callable $processor,
+        int $lifecycle = 0
+    ): void {
         $routes = Lookupd::getNodes($endpoint, $topic);
 
         foreach ($routes as $route) {
             $keys = [$route['topic'], $route['host'], $route['ports']['tcp']];
 
             Pool::register($keys, function () use ($endpoint, $route, $topic, $processor, $lifecycle) {
-
-                Logger::ins()->info('Creating new nsqd for consumer', [
+                Logger::getInstance()->info('Creating new nsqd for consumer', [
                     'lookupd' => $endpoint->getLookupd(),
                     'route' => $route,
                     'topic' => $topic,
                     'lifecycle' => $lifecycle
                 ]);
+
                 return (new Nsqd($endpoint))
                     ->setRoute($route)
                     ->setTopic($topic)
                     ->setLifecycle($lifecycle)
                     ->setConsumer($processor);
-            })
-                ->subscribe($channel)
-            ;
+            })->subscribe($channel);
         }
 
         Pool::getEvLoop()->run();
