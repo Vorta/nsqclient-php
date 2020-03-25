@@ -9,6 +9,7 @@ use NSQClient\Connection\Nsqd;
 use NSQClient\Connection\Pool;
 use NSQClient\Logger\Logger;
 use NSQClient\Message\Message;
+use NSQClient\Message\Bag as MessageBag;
 
 /**
  * Class Queue
@@ -19,13 +20,13 @@ class Queue
     /**
      * @param Endpoint $endpoint
      * @param string $topic
-     * @param Message $message
+     * @param Message|MessageBag $message
      * @return bool
      */
     public static function publish(
         Endpoint $endpoint,
         string $topic,
-        Message $message
+        $message
     ): bool {
         $routes = Lookupd::getNodes($endpoint, $topic);
         $route = $routes[rand(0, count($routes) - 1)];

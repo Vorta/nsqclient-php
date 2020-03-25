@@ -181,10 +181,10 @@ class Nsqd
     }
 
     /**
-     * @param Message $message
+     * @param Message|MessageBag $message
      * @return bool
      */
-    public function publish(Message $message): bool
+    public function publish($message): bool
     {
         return
             $this->endpoint->getConnType() === 'tcp'
