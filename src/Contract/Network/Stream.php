@@ -1,23 +1,21 @@
 <?php
-/**
- * Network stream
- * User: moyo
- * Date: 01/04/2017
- * Time: 3:12 PM
- */
 
 namespace NSQClient\Contract\Network;
 
+/**
+ * Interface Stream
+ * @package NSQClient\Contract\Network
+ */
 interface Stream
 {
     /**
-     * @param $buf
+     * @param string $buf
      */
-    public function write($buf);
+    public function write(string $buf): void;
 
     /**
-     * @param $len
+     * @param int $len
      * @return string
      */
-    public function read($len);
+    public function read(int $len): string;
 }

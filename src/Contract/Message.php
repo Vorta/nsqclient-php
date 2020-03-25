@@ -1,26 +1,24 @@
 <?php
-/**
- * Message interface
- * User: moyo
- * Date: 01/04/2017
- * Time: 4:39 PM
- */
 
 namespace NSQClient\Contract;
 
+/**
+ * Interface Message
+ * @package NSQClient\Contract
+ */
 interface Message
 {
     /**
      * Get message ID
-     * @return int
+     * @return string
      */
-    public function id();
+    public function id(): string;
 
     /**
      * Get message payload (raw)
      * @return string
      */
-    public function payload();
+    public function payload(): string;
 
     /**
      * Get message data (serialized/un-serialized)
@@ -32,34 +30,34 @@ interface Message
      * Get attempts
      * @return int
      */
-    public function attempts();
+    public function attempts(): int;
 
     /**
      * Get timestamp
      * @return int
      */
-    public function timestamp();
+    public function timestamp(): int;
 
     /**
      * Make msg is done
      */
-    public function done();
+    public function done(): void;
 
     /**
      * Make retry with msg
      */
-    public function retry();
+    public function retry(): void;
 
     /**
      * Make delay with msg
-     * @param $seconds
+     * @param int $seconds
      */
-    public function delay($seconds);
+    public function delay(int $seconds): void;
 
     /**
      * Set msg deferred or get msg's deferred milliseconds
-     * @param $seconds
-     * @return int|static
+     * @param int|null $seconds
+     * @return int|self
      */
-    public function deferred($seconds = null);
+    public function deferred(?int $seconds = null);
 }

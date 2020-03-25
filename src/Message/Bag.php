@@ -1,25 +1,23 @@
 <?php
-/**
- * Message bag
- * User: moyo
- * Date: 01/04/2017
- * Time: 5:07 PM
- */
 
 namespace NSQClient\Message;
 
+/**
+ * Class Bag
+ * @package NSQClient\Message
+ */
 class Bag
 {
     /**
      * @var Message[]
      */
-    private $messages = [];
+    private array $messages = [];
 
     /**
-     * @param $list
+     * @param array<mixed> $list
      * @return self
      */
-    public static function generate($list)
+    public static function generate($list): self
     {
         $bag = new self();
         foreach ($list as $item) {
@@ -29,17 +27,19 @@ class Bag
     }
 
     /**
-     * @param $msg
+     * @param Message $message
+     * @return self
      */
-    public function append($msg)
+    public function append(Message $message): self
     {
-        $this->messages[] = $msg;
+        $this->messages[] = $message;
+        return $this;
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
-    public function export()
+    public function export(): array
     {
         $bag = [];
         foreach ($this->messages as $msg) {

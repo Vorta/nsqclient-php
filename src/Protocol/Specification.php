@@ -1,47 +1,45 @@
 <?php
-/**
- * Specification defines
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:47 PM
- */
 
 namespace NSQClient\Protocol;
 
 use NSQClient\Contract\Network\Stream;
 use NSQClient\Exception\UnknownFrameException;
 
+/**
+ * Class Specification
+ * @package NSQClient\Protocol
+ */
 class Specification
 {
     /**
      * Frame types
      */
-    const FRAME_TYPE_BROKEN = -1;
-    const FRAME_TYPE_RESPONSE = 0;
-    const FRAME_TYPE_ERROR = 1;
-    const FRAME_TYPE_MESSAGE = 2;
+    private const FRAME_TYPE_BROKEN = -1;
+    private const FRAME_TYPE_RESPONSE = 0;
+    private const FRAME_TYPE_ERROR = 1;
+    private const FRAME_TYPE_MESSAGE = 2;
 
     /**
      * Heartbeat response content
      */
-    const HEARTBEAT = '_heartbeat_';
+    private const HEARTBEAT = '_heartbeat_';
 
     /**
      * OK response content
      */
-    const OK = 'OK';
+    private const OK = 'OK';
 
     /**
      * CLOSE_WAIT response content
      */
-    const CLOSE_WAIT = 'CLOSE_WAIT';
+    private const CLOSE_WAIT = 'CLOSE_WAIT';
 
     /**
      * Read frame
      * @param Stream $buffer
-     * @return array
+     * @return array<string, mixed>
      */
-    public static function readFrame(Stream $buffer)
+    public static function readFrame(Stream $buffer): array
     {
         $size = Binary::readInt($buffer);
         $frameType = Binary::readInt($buffer);
@@ -64,7 +62,6 @@ class Specification
                 break;
             default:
                 throw new UnknownFrameException(Binary::readString($buffer, $size - 4));
-                break;
         }
 
         // check frame data
@@ -81,77 +78,75 @@ class Specification
 
     /**
      * Test if frame is a message
-     * @param array $frame
+     * @param array<string, mixed> $frame
      * @return bool
      */
-    public static function frameIsMessage(array $frame)
+    public static function frameIsMessage(array $frame): bool
     {
         return isset($frame['type'], $frame['payload']) && $frame['type'] === self::FRAME_TYPE_MESSAGE;
     }
 
     /**
      * Test if frame is HEARTBEAT
-     * @param array $frame
+     * @param array<string, mixed> $frame
      * @return bool
      */
-    public static function frameIsHeartbeat(array $frame)
+    public static function frameIsHeartbeat(array $frame): bool
     {
         return self::frameIsResponse($frame, self::HEARTBEAT);
     }
 
     /**
      * Test if frame is OK
-     * @param array $frame
+     * @param array<string, mixed> $frame
      * @return bool
      */
-    public static function frameIsOK(array $frame)
+    public static function frameIsOK(array $frame): bool
     {
         return self::frameIsResponse($frame, self::OK);
     }
 
     /**
      * Test if frame is CLOSE_WAIT
-     * @param array $frame
+     * @param array<string, mixed> $frame
      * @return bool
      */
-    public static function frameIsCloseWait(array $frame)
+    public static function frameIsCloseWait(array $frame): bool
     {
         return self::frameIsResponse($frame, self::CLOSE_WAIT);
     }
 
     /**
      * Test if frame is ERROR
-     * @param array $frame
+     * @param array<string, mixed> $frame
      * @return bool
      */
-    public static function frameIsError(array $frame)
+    public static function frameIsError(array $frame): bool
     {
         return isset($frame['type']) && $frame['type'] === self::FRAME_TYPE_ERROR && isset($frame['error']);
     }
 
     /**
      * Test if frame is BROKEN
-     * @param array $frame
+     * @param array<string, mixed> $frame
      * @return bool
      */
-    public static function frameIsBroken(array $frame)
+    public static function frameIsBroken(array $frame): bool
     {
         return isset($frame['type']) && $frame['type'] === self::FRAME_TYPE_BROKEN;
     }
 
     /**
      * Test if frame is a response frame (optionally with content $response)
-     * @param array $frame
-     * @param string
+     * @param array<string, mixed> $frame
+     * @param string|null $response
      * @return bool
      */
-    private static function frameIsResponse(array $frame, $response = null)
+    private static function frameIsResponse(array $frame, ?string $response = null): bool
     {
         return
             isset($frame['type'], $frame['response'])
-            &&
-            $frame['type'] === self::FRAME_TYPE_RESPONSE
-            &&
-            ($response === null || $frame['response'] === $response);
+            && $frame['type'] === self::FRAME_TYPE_RESPONSE
+            && ($response === null || $frame['response'] === $response);
     }
 }

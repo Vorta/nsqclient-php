@@ -1,27 +1,25 @@
 <?php
-/**
- * NSQ Message
- * User: moyo
- * Date: 01/04/2017
- * Time: 4:44 PM
- */
 
 namespace NSQClient\Message;
 
 use NSQClient\Connection\Nsqd;
 use NSQClient\Contract\Message as MessageInterface;
 
+/**
+ * Class Message
+ * @package NSQClient\Message
+ */
 class Message implements MessageInterface
 {
     /**
      * @var string
      */
-    private $id = null;
+    private ?string $id = null;
 
     /**
      * @var string
      */
-    private $payload = null;
+    private ?string $payload = null;
 
     /**
      * @var mixed
@@ -31,45 +29,50 @@ class Message implements MessageInterface
     /**
      * @var int
      */
-    private $attempts = null;
+    private ?int $attempts = null;
 
     /**
      * @var int
      */
-    private $timestamp = null;
+    private ?int $timestamp = null;
 
     /**
      * @var int
      */
-    private $deferred = null;
+    private ?int $deferred = null;
 
     /**
      * @var Nsqd
      */
-    private $nsqd = null;
+    private ?Nsqd $nsqd = null;
 
     /**
      * Message constructor.
-     * @param $payload
-     * @param null $id
-     * @param null $attempts
-     * @param null $timestamp
-     * @param Nsqd $nsqd
+     * @param string        $payload
+     * @param string|null   $id
+     * @param int|null      $attempts
+     * @param int|null      $timestamp
+     * @param Nsqd|null     $nsqd
      */
-    public function __construct($payload, $id = null, $attempts = null, $timestamp = null, Nsqd $nsqd = null)
-    {
+    public function __construct(
+        string $payload,
+        ?string $id = null,
+        ?int $attempts = null,
+        ?int $timestamp = null,
+        ?Nsqd $nsqd = null
+    ) {
         $this->id = $id;
         $this->payload = $payload;
         $this->attempts = $attempts;
         $this->timestamp = $timestamp;
-        $this->data = $id ? json_decode($payload, true) : json_encode($payload);
+        $this->data = !is_null($id) ? json_decode($payload, true) : json_encode($payload);
         $this->nsqd = $nsqd;
     }
 
     /**
      * @return string
      */
-    public function id()
+    public function id(): string
     {
         return $this->id;
     }
@@ -77,7 +80,7 @@ class Message implements MessageInterface
     /**
      * @return string
      */
-    public function payload()
+    public function payload(): string
     {
         return $this->payload;
     }
@@ -93,7 +96,7 @@ class Message implements MessageInterface
     /**
      * @return int
      */
-    public function attempts()
+    public function attempts(): int
     {
         return $this->attempts;
     }
@@ -101,7 +104,7 @@ class Message implements MessageInterface
     /**
      * @return int
      */
-    public function timestamp()
+    public function timestamp(): int
     {
         return $this->timestamp;
     }
@@ -109,7 +112,7 @@ class Message implements MessageInterface
     /**
      * just done
      */
-    public function done()
+    public function done(): void
     {
         $this->nsqd->finish($this->id);
     }
@@ -117,31 +120,30 @@ class Message implements MessageInterface
     /**
      * just retry
      */
-    public function retry()
+    public function retry(): void
     {
         $this->delay(0);
     }
 
     /**
      * just delay
-     * @param $seconds
+     * @param int $seconds
      */
-    public function delay($seconds)
+    public function delay(int $seconds): void
     {
         $this->nsqd->requeue($this->id, $seconds * 1000);
     }
 
     /**
-     * @param $seconds
-     * @return null|int|static
+     * @param int|null $seconds
+     * @return int|null
      */
-    public function deferred($seconds = null)
+    public function deferred(?int $seconds = null): ?int
     {
         if (is_null($seconds)) {
             return $this->deferred;
         } else {
-            $this->deferred = $seconds * 1000;
-            return $this;
+            return $this->deferred = $seconds * 1000;
         }
     }
 }

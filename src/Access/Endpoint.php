@@ -1,48 +1,46 @@
 <?php
-/**
- * Access endpoint info
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:24 PM
- */
 
 namespace NSQClient\Access;
 
 use NSQClient\Exception\InvalidLookupdException;
 
+/**
+ * Class Endpoint
+ * @package NSQClient\Access
+ */
 class Endpoint
 {
     /**
      * @var string
      */
-    private $lookupd = 'http://nsqlookupd.local.moyo.im:4161';
+    private string $lookupd = 'http://nsqlookupd.local.moyo.im:4161';
 
     /**
      * @var string
      */
-    private $uniqueID = 'hash';
+    private string $uniqueID = 'hash';
 
     /**
      * Endpoint constructor.
-     * @param $lookupd
+     * @param string $lookupd
      * @throws InvalidLookupdException
      */
-    public function __construct($lookupd)
+    public function __construct(string $lookupd)
     {
         $this->lookupd = $lookupd;
         $this->uniqueID = spl_object_hash($this);
 
         // checks
         $parsed = parse_url($this->lookupd);
-        if (!isset($parsed['host'])) {
-            throw new InvalidLookupdException;
+        if (!is_array($parsed) || !array_key_exists('host', $parsed)) {
+            throw new InvalidLookupdException();
         }
     }
 
     /**
      * @return string
      */
-    public function getUniqueID()
+    public function getUniqueID(): string
     {
         return $this->uniqueID;
     }
@@ -50,7 +48,7 @@ class Endpoint
     /**
      * @return string
      */
-    public function getLookupd()
+    public function getLookupd(): string
     {
         return $this->lookupd;
     }
@@ -58,8 +56,8 @@ class Endpoint
     /**
      * @return string
      */
-    public function getConnType()
+    public function getConnType(): string
     {
-        return PHP_SAPI == 'cli' ? 'tcp' : 'http';
+        return PHP_SAPI === 'cli' ? 'tcp' : 'http';
     }
 }

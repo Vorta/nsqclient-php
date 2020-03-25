@@ -1,36 +1,34 @@
 <?php
-/**
- * SDK meta info
- * User: moyo
- * Date: 01/04/2017
- * Time: 3:21 PM
- */
 
 namespace NSQClient;
 
 use Psr\Log\LoggerInterface;
 
+/**
+ * Class SDK
+ * @package NSQClient
+ */
 class SDK
 {
     /**
      * sdk version
      */
-    const VERSION = '1.0';
+    public const VERSION = '2.0';
 
     /**
      * amazing name
      */
-    const NAME = 'nsqclient';
+    public const NAME = 'nsqclient';
 
     /**
      * @var int
      */
-    public static $pubRecyclingSec = 45;
+    public static int $pubRecyclingSec = 45;
 
     /**
-     * @var LoggerInterface
+     * @var LoggerInterface|null
      */
-    public static $presentLogger = null;
+    public static ?LoggerInterface $presentLogger = null;
 
     /**
      * @var bool
@@ -40,15 +38,15 @@ class SDK
     /**
      * @param LoggerInterface $logger
      */
-    public static function setLogger(LoggerInterface $logger)
+    public static function setLogger(LoggerInterface $logger): void
     {
         self::$presentLogger = $logger;
     }
 
     /**
-     * @param $enable
+     * @param bool $enable
      */
-    public static function setStringPack($enable)
+    public static function setStringPack(bool $enable): void
     {
         self::$enabledStringPack = $enable;
     }

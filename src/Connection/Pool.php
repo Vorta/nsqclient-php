@@ -1,10 +1,4 @@
 <?php
-/**
- * Connection pool
- * User: moyo
- * Date: 31/03/2017
- * Time: 4:37 PM
- */
 
 namespace NSQClient\Connection;
 
@@ -15,42 +9,46 @@ use NSQClient\Utils\GracefulShutdown;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 
+/**
+ * Class Pool
+ * @package NSQClient\Connection
+ */
 class Pool
 {
     /**
      * @var Nsqd[]
      */
-    private static $instances = [];
+    private static array $instances = [];
 
     /**
      * @var Stream[]
      */
-    private static $sockMaps = [];
+    private static array $sockMaps = [];
 
     /**
      * @var LoopInterface
      */
-    private static $evLoops = null;
+    private static ?LoopInterface $evLoops = null;
 
     /**
      * @var int
      */
-    private static $evAttached = 0;
+    private static int $evAttached = 0;
 
     /**
      * @return Nsqd[]
      */
-    public static function instances()
+    public static function instances(): array
     {
         return self::$instances;
     }
 
     /**
-     * @param array $factors
+     * @param string[] $factors
      * @param callable $creator
      * @return Nsqd
      */
-    public static function register($factors, callable $creator)
+    public static function register(array $factors, callable $creator): Nsqd
     {
         $insKey = self::getInsKey($factors);
 
@@ -66,28 +64,28 @@ class Pool
      * @return Stream
      * @throws PoolMissingSocketException
      */
-    public static function search($socket)
+    public static function search($socket): Stream
     {
-        $expectSockID = (int)$socket;
+        $expectSockID = (int) $socket;
 
         if (isset(self::$sockMaps[$expectSockID])) {
             return self::$sockMaps[$expectSockID];
         }
 
         foreach (self::$instances as $nsqd) {
-            if ($nsqd->getSockID() == $expectSockID) {
+            if ($nsqd->getSockID() === $expectSockID) {
                 self::$sockMaps[$nsqd->getSockID()] = $nsqd->getSockIns();
                 return $nsqd->getSockIns();
             }
         }
 
-        throw new PoolMissingSocketException;
+        throw new PoolMissingSocketException();
     }
 
     /**
      * @return LoopInterface
      */
-    public static function getEvLoop()
+    public static function getEvLoop(): LoopInterface
     {
         if (is_null(self::$evLoops)) {
             self::$evLoops = Factory::create();
@@ -99,28 +97,30 @@ class Pool
     /**
      * New attach by consumer connects
      */
-    public static function setEvAttached()
+    public static function setEvAttached(): void
     {
-        self::$evAttached ++;
+        self::$evAttached++;
     }
 
     /**
      * New detach by consumer closing
      */
-    public static function setEvDetached()
+    public static function setEvDetached(): void
     {
-        self::$evAttached --;
+        self::$evAttached--;
         if (self::$evAttached <= 0) {
-            Logger::ins()->info('ALL event detached .. perform shutdown');
-            self::$evLoops && self::$evLoops->stop();
+            Logger::getInstance()->info('ALL event detached ... perform shutdown');
+            if (self::$evLoops instanceof LoopInterface) {
+                self::$evLoops->stop();
+            }
         }
     }
 
     /**
-     * @param $factors
+     * @param string[] $factors
      * @return string
      */
-    private static function getInsKey($factors)
+    private static function getInsKey(array $factors): string
     {
         return implode('$', $factors);
     }
