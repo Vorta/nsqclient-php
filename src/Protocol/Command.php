@@ -57,7 +57,7 @@ class Command
      * Publish [PUB]
      * @param string $topic
      * @param string $message
-     * @param int $deferred
+     * @param int|null $deferred
      * @return string
      */
     public static function message(string $topic, string $message, ?int $deferred = null): string

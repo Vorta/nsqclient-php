@@ -12,12 +12,19 @@ class CommandHTTP
      * Publish [PUB]
      * @param string $topic
      * @param string $message
+     * @param int|null $deferred
      * @return array<int, mixed>
      */
-    public static function message(string $topic, string $message): array
+    public static function message(string $topic, string $message, ?int $deferred = null): array
     {
+        if ($deferred === null) {
+            $url = sprintf('pub?topic=%s', $topic);
+        } else {
+            $url = sprintf('pub?topic=%s&defer=%s', $topic, $deferred);
+        }
+
         return [
-            sprintf('pub?topic=%s', $topic),
+            $url,
             Binary::packString($message)
         ];
     }
