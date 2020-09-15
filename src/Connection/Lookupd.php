@@ -26,6 +26,29 @@ class Lookupd
     /**
      * @param Endpoint $endpoint
      * @param string $topic
+     * @return bool
+     * @throws LookupTopicException
+     */
+    public static function topicExists(Endpoint $endpoint, string $topic): bool
+    {
+        list($error, $response) = HTTP::get($endpoint->getLookupd() . '/topics');
+
+        if ($error) {
+            list($netErrNo, $netErrMsg) = $error;
+            Logger::getInstance()->error('Unable to get topics', ['no' => $netErrNo, 'msg' => $netErrMsg]);
+            throw new LookupTopicException($netErrMsg, $netErrNo);
+        } else {
+            Logger::getInstance()->debug('Topics check got', ['raw' => $response]);
+            $topics = json_decode($response, true);
+            $topics = $topics['topics'] ?? [];
+        }
+
+        return in_array($topic, $topics);
+    }
+
+    /**
+     * @param Endpoint $endpoint
+     * @param string $topic
      * @return array<int, array<string, mixed>>
      * @throws LookupTopicException
      */

@@ -269,9 +269,9 @@ class Nsqd
     private function publishViaHTTP($message): bool
     {
         if ($message instanceof Message) {
-            list($uri, $data) = CommandHTTP::message($this->topic, $message->data());
+            list($uri, $data) = CommandHTTP::message($this->topic, $message->data(), $message->deferred());
         } elseif ($message instanceof MessageBag) {
-            list($uri, $data) = CommandHTTP::messages($this->topic, $message->export());
+            list($uri, $data) = CommandHTTP::messages($this->topic, $message->export(), $message->deferred());
         } else {
             Logger::getInstance()->error(
                 'Un-expected pub message',
@@ -395,5 +395,10 @@ class Nsqd
             'host' => $this->host,
             'port-tcp' => $this->portTCP
         ], $extra);
+    }
+
+    public static function topicCreate(string $topic)
+    {
+        HTTP::post('nsqd:4151/topic/create?topic=$topic', '');
     }
 }
